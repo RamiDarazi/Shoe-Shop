@@ -3,3 +3,5 @@
 .env
 .vercel/project.json
 assets/uploads/.gitkeep
+intern-diary-example.md
+intern-diary.md
