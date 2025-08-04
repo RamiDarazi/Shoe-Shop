@@ -257,6 +257,60 @@
         </div>
     </div>
 
+    <div id="productModal" class="modal">
+        <div class="modal-content product-modal-content">
+            <div class="modal-header">
+                <h3 id="productModalTitle">Product Details</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body product-modal-body">
+                <div class="product-detail-container">
+                    <div class="product-images">
+                        <div class="main-image">
+                            <img id="mainProductImage" src="" alt="Product Image">
+                        </div>
+                        <div class="thumbnail-images" id="thumbnailImages">
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <h2 id="productDetailName"></h2>
+                        <div class="product-rating">
+                            <div class="stars" id="productDetailRating"></div>
+                            <span id="productDetailReviews"></span>
+                        </div>
+                        <div class="product-price">
+                            <span class="current-price" id="productDetailPrice"></span>
+                            <span class="old-price" id="productDetailOldPrice"></span>
+                        </div>
+                        <div class="product-description">
+                            <p id="productDetailDescription"></p>
+                        </div>
+                        <div class="product-sizes">
+                            <h4>Size:</h4>
+                            <div class="size-options" id="sizeOptions">
+                            </div>
+                        </div>
+                        <div class="product-actions">
+                            <div class="quantity-selector">
+                                <button class="quantity-btn" id="decreaseQty">-</button>
+                                <span class="quantity" id="productQuantity">1</span>
+                                <button class="quantity-btn" id="increaseQty">+</button>
+                            </div>
+                            <button class="btn btn-primary add-to-cart-btn" id="addToCartModal">
+                                <i class="fas fa-shopping-cart"></i> Add to Cart
+                            </button>
+                        </div>
+                        <div class="product-reviews-section">
+                            <h4>Customer Reviews</h4>
+                            <div id="productReviews">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="loginModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">

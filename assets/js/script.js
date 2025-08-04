@@ -585,10 +585,202 @@ function toggleWishlist(productId) {
 }
 
 function quickView(productId) {
-    const product = products.find(p => p.id === productId);
+    const product = sampleProducts.find(p => p.id === productId);
     if (!product) return;
     
-    showNotification(`Showing ${product.name} details...`, 'info');
+    showProductModal(product);
+}
+
+// Product Detail Modal Functions
+let selectedSize = null;
+let productQuantity = 1;
+
+function showProductModal(product) {
+    const modal = document.getElementById('productModal');
+    const mainImage = document.getElementById('mainProductImage');
+    const productName = document.getElementById('productDetailName');
+    const productRating = document.getElementById('productDetailRating');
+    const productReviews = document.getElementById('productDetailReviews');
+    const productPrice = document.getElementById('productDetailPrice');
+    const productOldPrice = document.getElementById('productDetailOldPrice');
+    const productDescription = document.getElementById('productDetailDescription');
+    const sizeOptions = document.getElementById('sizeOptions');
+    const productQuantityEl = document.getElementById('productQuantity');
+    const productReviewsSection = document.getElementById('productReviews');
+    
+    mainImage.src = product.image;
+    mainImage.alt = product.name;
+    productName.textContent = product.name;
+    productPrice.textContent = `$${product.price}`;
+    
+    if (product.oldPrice) {
+        productOldPrice.textContent = `$${product.oldPrice}`;
+        productOldPrice.style.display = 'inline';
+    } else {
+        productOldPrice.style.display = 'none';
+    }
+    
+    productRating.innerHTML = generateStars(product.rating);
+    productReviews.textContent = `(${product.reviews} reviews)`;
+    
+    productDescription.textContent = getProductDescription(product);
+    
+    generateSizeOptions(sizeOptions);
+    
+    productQuantity = 1;
+    productQuantityEl.textContent = productQuantity;
+    
+    generateProductReviews(productReviewsSection, product);
+    
+    modal.style.display = 'block';
+    
+    setupProductModalListeners(product);
+}
+
+function generateStars(rating) {
+    let starsHtml = '';
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+    
+    for (let i = 0; i < fullStars; i++) {
+        starsHtml += '<i class="fas fa-star star"></i>';
+    }
+    
+    if (hasHalfStar) {
+        starsHtml += '<i class="fas fa-star-half-alt star"></i>';
+    }
+    
+    const emptyStars = 5 - Math.ceil(rating);
+    for (let i = 0; i < emptyStars; i++) {
+        starsHtml += '<i class="far fa-star star empty"></i>';
+    }
+    
+    return starsHtml;
+}
+
+function getProductDescription(product) {
+    const descriptions = {
+        1: "Experience ultimate comfort and style with the Nike Air Max 270. Featuring Nike's largest heel Air unit yet, this shoe delivers exceptional cushioning and a modern aesthetic perfect for everyday wear.",
+        2: "The Adidas Ultraboost 22 combines responsive Boost cushioning with a Primeknit upper for a sock-like fit. Engineered for runners who demand both performance and style.",
+        3: "The iconic Converse Chuck Taylor All Star remains a timeless classic. With its distinctive silhouette and versatile design, it's perfect for any casual occasion.",
+        4: "Vans Old Skool brings the classic skate shoe aesthetic with its signature side stripe and durable construction. A perfect blend of style and functionality.",
+        5: "Christian Louboutin heels represent the pinnacle of luxury footwear. Crafted with exquisite attention to detail and featuring the iconic red sole.",
+        6: "Jimmy Choo pumps embody elegance and sophistication. These luxury heels are perfect for special occasions and formal events.",
+        7: "Puma RS-X features a retro-futuristic design with bold colors and chunky silhouette. Perfect for those who want to make a statement.",
+        8: "New Balance 990v5 offers premium comfort with its ENCAP midsole technology and pigskin/mesh upper construction.",
+        9: "Dr. Martens 1460 boots are built to last with their iconic air-cushioned sole and durable leather construction.",
+        10: "Balenciaga Triple S represents avant-garde luxury with its oversized silhouette and premium materials.",
+        11: "Timberland 6-Inch boots provide rugged durability and waterproof protection for outdoor adventures.",
+        12: "Gucci Ace sneakers combine luxury craftsmanship with contemporary design, featuring premium leather and signature details."
+    };
+    
+    return descriptions[product.id] || "Premium quality footwear designed for comfort and style.";
+}
+
+function generateSizeOptions(container) {
+    const sizes = ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45'];
+    container.innerHTML = '';
+    
+    sizes.forEach(size => {
+        const sizeEl = document.createElement('div');
+        sizeEl.className = 'size-option';
+        sizeEl.textContent = size;
+        sizeEl.addEventListener('click', () => selectSize(size, sizeEl));
+        container.appendChild(sizeEl);
+    });
+}
+
+function selectSize(size, element) {
+    document.querySelectorAll('.size-option').forEach(el => el.classList.remove('selected'));
+    
+    element.classList.add('selected');
+    selectedSize = size;
+}
+
+function generateProductReviews(container, product) {
+    const sampleReviews = [
+        {
+            author: "John D.",
+            rating: 5,
+            text: "Excellent quality and very comfortable. Highly recommended!"
+        },
+        {
+            author: "Sarah M.",
+            rating: 4,
+            text: "Great shoes, good value for money. Fast delivery too."
+        },
+        {
+            author: "Mike R.",
+            rating: 5,
+            text: "Perfect fit and amazing style. Will definitely buy again."
+        }
+    ];
+    
+    container.innerHTML = '';
+    
+    sampleReviews.forEach(review => {
+        const reviewEl = document.createElement('div');
+        reviewEl.className = 'review-item';
+        reviewEl.innerHTML = `
+            <div class="review-header">
+                <span class="review-author">${review.author}</span>
+                <div class="review-rating">${generateStars(review.rating)}</div>
+            </div>
+            <div class="review-text">${review.text}</div>
+        `;
+        container.appendChild(reviewEl);
+    });
+}
+
+function setupProductModalListeners(product) {
+    const modal = document.getElementById('productModal');
+    const closeBtn = modal.querySelector('.close');
+    const decreaseBtn = document.getElementById('decreaseQty');
+    const increaseBtn = document.getElementById('increaseQty');
+    const addToCartBtn = document.getElementById('addToCartModal');
+    
+    // Close modal
+    closeBtn.onclick = () => {
+        modal.style.display = 'none';
+        selectedSize = null;
+        productQuantity = 1;
+    };
+    
+    decreaseBtn.onclick = () => {
+        if (productQuantity > 1) {
+            productQuantity--;
+            document.getElementById('productQuantity').textContent = productQuantity;
+        }
+    };
+    
+    increaseBtn.onclick = () => {
+        productQuantity++;
+        document.getElementById('productQuantity').textContent = productQuantity;
+    };
+    
+    addToCartBtn.onclick = () => {
+        if (!selectedSize) {
+            showNotification('Please select a size', 'error');
+            return;
+        }
+        
+        for (let i = 0; i < productQuantity; i++) {
+            addToCart(product.id);
+        }
+        
+        showNotification(`Added ${productQuantity} ${product.name} (Size ${selectedSize}) to cart!`, 'success');
+        modal.style.display = 'none';
+        selectedSize = null;
+        productQuantity = 1;
+    };
+    
+    window.onclick = (event) => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+            selectedSize = null;
+            productQuantity = 1;
+        }
+    };
 }
 
 function handleContactForm(e) {
