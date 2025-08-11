@@ -65,7 +65,7 @@
                 </div>
             </div>
             <div class="hero-image">
-                <img src="https://images.unsplash.com/photo-1549298916-b41d501d3772?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="Premium Ayakkabı">
+                <img src="https://images.unsplash.com/photo-1549298916-b41d501d3772?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="Premium Shoes">
             </div>
         </div>
     </section>
@@ -129,7 +129,7 @@
                         <div class="feature">
                             <i class="fas fa-shipping-fast"></i>
                             <h4>Fast Shipping</h4>
-                            <p>Delivered to cargo within 24 hours</p>
+                            <p>Delivered within 24 hours</p>
                         </div>
                         <div class="feature">
                             <i class="fas fa-undo"></i>
@@ -179,13 +179,13 @@
                 </div>
                 <form class="contact-form">
                     <div class="form-group">
-                        <input type="text" placeholder="Your Name" required>
+                        <input type="text" name="name" placeholder="Your Name" required>
                     </div>
                     <div class="form-group">
-                        <input type="email" placeholder="Email" required>
+                        <input type="email" name="email" placeholder="Email" required>
                     </div>
                     <div class="form-group">
-                        <textarea placeholder="Your Message" rows="5" required></textarea>
+                        <textarea name="message" placeholder="Your Message" rows="5" required></textarea>
                     </div>
                     <button type="submit" class="btn btn-primary">Send Message</button>
                 </form>
@@ -321,12 +321,15 @@
                 <form id="authForm">
                     <div class="form-group">
                         <input type="email" id="email" placeholder="Email" required>
+                        <div class="error-message" id="emailError"></div>
                     </div>
                     <div class="form-group">
                         <input type="password" id="password" placeholder="Password" required>
+                        <div class="error-message" id="passwordError"></div>
                     </div>
                     <div class="form-group" id="nameGroup" style="display: none;">
                         <input type="text" id="fullName" placeholder="Full Name">
+                        <div class="error-message" id="nameError"></div>
                     </div>
                     <button type="submit" class="btn btn-primary" id="authSubmit">Login</button>
                 </form>
@@ -336,6 +339,11 @@
                 </p>
             </div>
         </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
     </div>
 
     <script src="assets/js/script.js"></script>

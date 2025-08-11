@@ -635,6 +635,349 @@ app.post('/api/newsletter', async (req, res) => {
     }
 });
 
+// Admin Routes
+
+// Get dashboard stats
+app.get('/api/admin/stats', authenticateAdmin, async (req, res) => {
+    try {
+        const [productCount] = await pool.execute('SELECT COUNT(*) as count FROM products WHERE is_active = TRUE');
+        const [orderCount] = await pool.execute('SELECT COUNT(*) as count FROM orders');
+        const [userCount] = await pool.execute('SELECT COUNT(*) as count FROM users WHERE is_active = TRUE');
+        const [revenue] = await pool.execute('SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = "paid"');
+
+        res.json({
+            totalProducts: productCount[0].count,
+            totalOrders: orderCount[0].count,
+            totalUsers: userCount[0].count,
+            totalRevenue: revenue[0].total
+        });
+    } catch (error) {
+        console.error('Admin stats error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Get recent orders for dashboard
+app.get('/api/admin/orders/recent', authenticateAdmin, async (req, res) => {
+    try {
+        const [orders] = await pool.execute(`
+            SELECT 
+                o.id, o.order_number, o.status, o.total_amount, o.created_at,
+                u.first_name, u.last_name
+            FROM orders o
+            LEFT JOIN users u ON o.user_id = u.id
+            ORDER BY o.created_at DESC
+            LIMIT 10
+        `);
+
+        res.json(orders);
+    } catch (error) {
+        console.error('Recent orders error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Get all products for admin
+app.get('/api/admin/products', authenticateAdmin, async (req, res) => {
+    try {
+        const [products] = await pool.execute(`
+            SELECT 
+                p.id, p.name, p.price, p.stock_quantity, p.is_active,
+                c.name as category_name,
+                pi.image_url as primary_image
+            FROM products p
+            LEFT JOIN categories c ON p.category_id = c.id
+            LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = TRUE
+            ORDER BY p.created_at DESC
+        `);
+
+        res.json(products);
+    } catch (error) {
+        console.error('Admin products error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Get all orders for admin
+app.get('/api/admin/orders', authenticateAdmin, async (req, res) => {
+    try {
+        const [orders] = await pool.execute(`
+            SELECT 
+                o.id, o.order_number, o.status, o.payment_status, o.total_amount, o.created_at,
+                u.first_name, u.last_name,
+                COUNT(oi.id) as item_count
+            FROM orders o
+            LEFT JOIN users u ON o.user_id = u.id
+            LEFT JOIN order_items oi ON o.id = oi.order_id
+            GROUP BY o.id
+            ORDER BY o.created_at DESC
+        `);
+
+        res.json(orders);
+    } catch (error) {
+        console.error('Admin orders error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Get all users for admin
+app.get('/api/admin/users', authenticateAdmin, async (req, res) => {
+    try {
+        const [users] = await pool.execute(`
+            SELECT 
+                id, first_name, last_name, email, phone, is_active, created_at
+            FROM users
+            ORDER BY created_at DESC
+        `);
+
+        res.json(users);
+    } catch (error) {
+        console.error('Admin users error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Get all categories for admin
+app.get('/api/admin/categories', authenticateAdmin, async (req, res) => {
+    try {
+        const [categories] = await pool.execute(`
+            SELECT 
+                c.id, c.name, c.slug, c.is_active,
+                COUNT(p.id) as product_count
+            FROM categories c
+            LEFT JOIN products p ON c.id = p.category_id AND p.is_active = TRUE
+            GROUP BY c.id
+            ORDER BY c.name
+        `);
+
+        res.json(categories);
+    } catch (error) {
+        console.error('Admin categories error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Get all contact messages for admin
+app.get('/api/admin/messages', authenticateAdmin, async (req, res) => {
+    try {
+        const [messages] = await pool.execute(`
+            SELECT id, name, email, subject, message, is_read, created_at
+            FROM contact_messages
+            ORDER BY created_at DESC
+        `);
+
+        res.json(messages);
+    } catch (error) {
+        console.error('Admin messages error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/user/profile', authenticateToken, async (req, res) => {
+    try {
+        const [users] = await pool.execute(
+            'SELECT id, email, first_name, last_name, phone, date_of_birth, gender, created_at FROM users WHERE id = ?',
+            [req.user.id]
+        );
+        
+        if (users.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        res.json(users[0]);
+    } catch (error) {
+        console.error('Get user profile error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.put('/api/user/profile', authenticateToken, async (req, res) => {
+    try {
+        const { first_name, last_name, email, phone, date_of_birth, gender } = req.body;
+        
+        const [result] = await pool.execute(
+            'UPDATE users SET first_name = ?, last_name = ?, email = ?, phone = ?, date_of_birth = ?, gender = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [first_name, last_name, email, phone, date_of_birth, gender, req.user.id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        res.json({ message: 'Profile updated successfully' });
+    } catch (error) {
+        console.error('Update user profile error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/user/overview', authenticateToken, async (req, res) => {
+    try {
+        const [orderStats] = await pool.execute(
+            'SELECT COUNT(*) as totalOrders, COALESCE(SUM(total_amount), 0) as totalSpent FROM orders WHERE user_id = ?',
+            [req.user.id]
+        );
+        
+        const [recentOrders] = await pool.execute(
+            'SELECT o.*, GROUP_CONCAT(CONCAT(oi.product_name, "|", oi.size, "|", oi.quantity, "|", oi.price) SEPARATOR ";") as items FROM orders o LEFT JOIN order_items oi ON o.id = oi.order_id WHERE o.user_id = ? GROUP BY o.id ORDER BY o.created_at DESC LIMIT 3',
+            [req.user.id]
+        );
+        
+        const formattedOrders = recentOrders.map(order => ({
+            ...order,
+            items: order.items ? order.items.split(';').map(item => {
+                const [name, size, quantity, price] = item.split('|');
+                return { name, size, quantity: parseInt(quantity), price: parseFloat(price) };
+            }) : []
+        }));
+        
+        res.json({
+            totalOrders: orderStats[0].totalOrders,
+            totalSpent: orderStats[0].totalSpent,
+            wishlistItems: 0,
+            recentOrders: formattedOrders
+        });
+    } catch (error) {
+        console.error('Get user overview error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/user/orders', authenticateToken, async (req, res) => {
+    try {
+        const [orders] = await pool.execute(
+            'SELECT o.*, GROUP_CONCAT(CONCAT(oi.product_name, "|", oi.size, "|", oi.quantity, "|", oi.price) SEPARATOR ";") as items FROM orders o LEFT JOIN order_items oi ON o.id = oi.order_id WHERE o.user_id = ? GROUP BY o.id ORDER BY o.created_at DESC',
+            [req.user.id]
+        );
+        
+        const formattedOrders = orders.map(order => ({
+            ...order,
+            items: order.items ? order.items.split(';').map(item => {
+                const [name, size, quantity, price] = item.split('|');
+                return { name, size, quantity: parseInt(quantity), price: parseFloat(price) };
+            }) : []
+        }));
+        
+        res.json(formattedOrders);
+    } catch (error) {
+        console.error('Get user orders error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/user/addresses', authenticateToken, async (req, res) => {
+    try {
+        const [addresses] = await pool.execute(
+            'SELECT * FROM user_addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC',
+            [req.user.id]
+        );
+        res.json(addresses);
+    } catch (error) {
+        console.error('Get user addresses error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/user/addresses', authenticateToken, async (req, res) => {
+    try {
+        const { type, first_name, last_name, company, address_line_1, address_line_2, city, state, postal_code, country, phone, is_default } = req.body;
+        
+        if (is_default) {
+            await pool.execute(
+                'UPDATE user_addresses SET is_default = 0 WHERE user_id = ?',
+                [req.user.id]
+            );
+        }
+        
+        const [result] = await pool.execute(
+            'INSERT INTO user_addresses (user_id, type, first_name, last_name, company, address_line_1, address_line_2, city, state, postal_code, country, phone, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [req.user.id, type, first_name, last_name, company, address_line_1, address_line_2, city, state, postal_code, country, phone, is_default ? 1 : 0]
+        );
+        
+        res.json({ message: 'Address added successfully', id: result.insertId });
+    } catch (error) {
+        console.error('Add address error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.delete('/api/user/addresses/:id', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const [result] = await pool.execute(
+            'DELETE FROM user_addresses WHERE id = ? AND user_id = ?',
+            [id, req.user.id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Address not found' });
+        }
+        
+        res.json({ message: 'Address deleted successfully' });
+    } catch (error) {
+        console.error('Delete address error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.put('/api/user/addresses/:id/default', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        await pool.execute(
+            'UPDATE user_addresses SET is_default = 0 WHERE user_id = ?',
+            [req.user.id]
+        );
+        
+        const [result] = await pool.execute(
+            'UPDATE user_addresses SET is_default = 1 WHERE id = ? AND user_id = ?',
+            [id, req.user.id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Address not found' });
+        }
+        
+        res.json({ message: 'Default address updated successfully' });
+    } catch (error) {
+        console.error('Update default address error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.put('/api/user/change-password', authenticateToken, async (req, res) => {
+    try {
+        const { current_password, new_password } = req.body;
+        
+        const [users] = await pool.execute(
+            'SELECT password_hash FROM users WHERE id = ?',
+            [req.user.id]
+        );
+        
+        if (users.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        const isValidPassword = await bcrypt.compare(current_password, users[0].password_hash);
+        if (!isValidPassword) {
+            return res.status(400).json({ error: 'Current password is incorrect' });
+        }
+        
+        const hashedPassword = await bcrypt.hash(new_password, 12);
+        
+        await pool.execute(
+            'UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [hashedPassword, req.user.id]
+        );
+        
+        res.json({ message: 'Password changed successfully' });
+    } catch (error) {
+        console.error('Change password error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Error handling middleware
 app.use((error, req, res, next) => {
     console.error('Unhandled error:', error);

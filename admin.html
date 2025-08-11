@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - SoleStyle</title>
+    <link rel="stylesheet" href="assets/css/admin.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="admin-container">
+        <div id="loginSection" class="login-section">
+            <div class="login-card">
+                <div class="login-header">
+                    <h2><i class="fas fa-shoe-prints"></i> SoleStyle Admin</h2>
+                    <p>Admin Panel Access</p>
+                </div>
+                <form id="adminLoginForm" class="login-form">
+                    <div class="form-group">
+                        <input type="text" id="adminUsername" placeholder="Username" required>
+                        <div class="error-message" id="usernameError"></div>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="adminPassword" placeholder="Password" required>
+                        <div class="error-message" id="passwordError"></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="adminLoginBtn">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div id="dashboardSection" class="dashboard-section" style="display: none;">
+            <nav class="admin-navbar">
+                <div class="nav-brand">
+                    <h3><i class="fas fa-shoe-prints"></i> SoleStyle Admin</h3>
+                </div>
+                <div class="nav-user">
+                    <span id="adminUserName">Admin User</span>
+                    <button class="btn btn-secondary" onclick="adminLogout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </nav>
+
+            <div class="admin-layout">
+                <aside class="admin-sidebar">
+                    <ul class="sidebar-menu">
+                        <li class="menu-item active" data-section="dashboard">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </li>
+                        <li class="menu-item" data-section="products">
+                            <i class="fas fa-box"></i> Products
+                        </li>
+                        <li class="menu-item" data-section="orders">
+                            <i class="fas fa-shopping-bag"></i> Orders
+                        </li>
+                        <li class="menu-item" data-section="users">
+                            <i class="fas fa-users"></i> Users
+                        </li>
+                        <li class="menu-item" data-section="categories">
+                            <i class="fas fa-tags"></i> Categories
+                        </li>
+                        <li class="menu-item" data-section="messages">
+                            <i class="fas fa-envelope"></i> Messages
+                        </li>
+                    </ul>
+                </aside>
+
+                <main class="admin-content">
+                    <div id="dashboardContent" class="content-section active">
+                        <div class="page-header">
+                            <h2>Dashboard</h2>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3 id="totalProducts">0</h3>
+                                    <p>Total Products</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-shopping-bag"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3 id="totalOrders">0</h3>
+                                    <p>Total Orders</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3 id="totalUsers">0</h3>
+                                    <p>Total Users</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3 id="totalRevenue">$0</h3>
+                                    <p>Total Revenue</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="recent-orders">
+                            <h3>Recent Orders</h3>
+                            <div class="table-container">
+                                <table id="recentOrdersTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Order #</th>
+                                            <th>Customer</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="productsContent" class="content-section">
+                        <div class="page-header">
+                            <h2>Products Management</h2>
+                            <button class="btn btn-primary" onclick="showAddProductModal()">
+                                <i class="fas fa-plus"></i> Add Product
+                            </button>
+                        </div>
+                        <div class="table-container">
+                            <table id="productsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Image</th>
+                                        <th>Name</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Stock</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="ordersContent" class="content-section">
+                        <div class="page-header">
+                            <h2>Orders Management</h2>
+                            <div class="filter-controls">
+                                <select id="orderStatusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="processing">Processing</option>
+                                    <option value="shipped">Shipped</option>
+                                    <option value="delivered">Delivered</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table id="ordersTable">
+                                <thead>
+                                    <tr>
+                                        <th>Order #</th>
+                                        <th>Customer</th>
+                                        <th>Items</th>
+                                        <th>Total</th>
+                                        <th>Status</th>
+                                        <th>Payment</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="usersContent" class="content-section">
+                        <div class="page-header">
+                            <h2>Users Management</h2>
+                        </div>
+                        <div class="table-container">
+                            <table id="usersTable">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Status</th>
+                                        <th>Joined</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="categoriesContent" class="content-section">
+                        <div class="page-header">
+                            <h2>Categories Management</h2>
+                            <button class="btn btn-primary" onclick="showAddCategoryModal()">
+                                <i class="fas fa-plus"></i> Add Category
+                            </button>
+                        </div>
+                        <div class="table-container">
+                            <table id="categoriesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Slug</th>
+                                        <th>Products</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="messagesContent" class="content-section">
+                        <div class="page-header">
+                            <h2>Contact Messages</h2>
+                        </div>
+                        <div class="table-container">
+                            <table id="messagesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Subject</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div id="addProductModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Product</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="addProductForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Product Name</label>
+                            <input type="text" id="productName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>SKU</label>
+                            <input type="text" id="productSku" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="productCategory" required>
+                                <option value="">Select Category</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Brand</label>
+                            <select id="productBrand" required>
+                                <option value="">Select Brand</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Price ($)</label>
+                            <input type="number" id="productPrice" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Stock Quantity</label>
+                            <input type="number" id="productStock" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="productDescription" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Product Images</label>
+                        <input type="file" id="productImages" multiple accept="image/*">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addProductModal')">Cancel</button>
+                <button type="submit" form="addProductForm" class="btn btn-primary">Add Product</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/admin.js"></script>
+</body>
+</html>

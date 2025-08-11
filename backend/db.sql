@@ -279,6 +279,28 @@ CREATE TABLE admin_users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+CREATE TABLE user_addresses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    type ENUM('billing', 'shipping') NOT NULL,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    company VARCHAR(100),
+    address_line_1 VARCHAR(255) NOT NULL,
+    address_line_2 VARCHAR(255),
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(100),
+    postal_code VARCHAR(20) NOT NULL,
+    country VARCHAR(100) NOT NULL,
+    phone VARCHAR(20),
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user (user_id),
+    INDEX idx_default (is_default)
+);
+
 -- Insert Sample Data
 
 -- Insert Categories
@@ -320,11 +342,6 @@ INSERT INTO product_sizes (product_id, size, stock_quantity) VALUES
 (5, '39', 5), (5, '40', 8), (5, '41', 7), (5, '42', 3), (5, '43', 2),
 (6, '39', 4), (6, '40', 6), (6, '41', 5), (6, '42', 3), (6, '43', 2);
 
--- Insert Sample Reviews
-INSERT INTO product_reviews (product_id, user_id, rating, title, comment, is_approved) VALUES
-(1, 1, 5, 'Mükemmel ayakkabı!', 'Çok rahat ve şık. Kesinlikle tavsiye ederim.', TRUE),
-(1, 2, 4, 'Güzel ürün', 'Kaliteli malzeme, sadece biraz pahalı.', TRUE),
-(2, 1, 5, 'Koşu için harika', 'Uzun mesafe koşularında çok rahat.', TRUE);
 
 -- Insert Admin User (password: admin123)
 INSERT INTO admin_users (username, email, password_hash, first_name, last_name, role) VALUES

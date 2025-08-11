@@ -449,24 +449,40 @@ function debounce(func, wait) {
     };
 }
 
-function addToCart(productId) {
+function addToCart(productId, size = 'M', quantity = 1, buttonElement = null) {
     const product = products.find(p => p.id === productId);
     if (!product) return;
-
-    const existingItem = cart.find(item => item.id === productId);
     
-    if (existingItem) {
-        existingItem.quantity += 1;
-    } else {
-        cart.push({
-            ...product,
-            quantity: 1
-        });
+    // Show loading state on button if provided
+    if (buttonElement) {
+        buttonElement.classList.add('btn-loading');
+        buttonElement.disabled = true;
     }
-
-    updateCartUI();
-    saveCartToStorage();
-    showNotification('Product added to cart!', 'success');
+    
+    // Simulate API call delay
+    setTimeout(() => {
+        const existingItem = cart.find(item => item.id === productId && item.size === size);
+        
+        if (existingItem) {
+            existingItem.quantity += quantity;
+        } else {
+            cart.push({
+                ...product,
+                size: size,
+                quantity: quantity
+            });
+        }
+        
+        updateCartUI();
+        saveCartToStorage();
+        showNotification(`${product.name} added to cart!`, 'success');
+        
+        // Remove loading state
+        if (buttonElement) {
+            buttonElement.classList.remove('btn-loading');
+            buttonElement.disabled = false;
+        }
+    }, 800);
 }
 
 // Remove from Cart
@@ -558,13 +574,15 @@ function checkout() {
         return;
     }
 
-    showNotification('Redirecting to checkout...', 'info');
+    showLoadingOverlay();
+    showNotification('Processing your order...', 'info');
     
     setTimeout(() => {
         clearCart();
         document.getElementById('cartModal').style.display = 'none';
+        hideLoadingOverlay();
         showNotification('Order placed successfully!', 'success');
-    }, 2000);
+    }, 3000);
 }
 
 function saveCartToStorage() {
@@ -660,21 +678,21 @@ function generateStars(rating) {
 
 function getProductDescription(product) {
     const descriptions = {
-        1: "Experience ultimate comfort and style with the Nike Air Max 270. Featuring Nike's largest heel Air unit yet, this shoe delivers exceptional cushioning and a modern aesthetic perfect for everyday wear.",
-        2: "The Adidas Ultraboost 22 combines responsive Boost cushioning with a Primeknit upper for a sock-like fit. Engineered for runners who demand both performance and style.",
-        3: "The iconic Converse Chuck Taylor All Star remains a timeless classic. With its distinctive silhouette and versatile design, it's perfect for any casual occasion.",
-        4: "Vans Old Skool brings the classic skate shoe aesthetic with its signature side stripe and durable construction. A perfect blend of style and functionality.",
-        5: "Christian Louboutin heels represent the pinnacle of luxury footwear. Crafted with exquisite attention to detail and featuring the iconic red sole.",
-        6: "Jimmy Choo pumps embody elegance and sophistication. These luxury heels are perfect for special occasions and formal events.",
-        7: "Puma RS-X features a retro-futuristic design with bold colors and chunky silhouette. Perfect for those who want to make a statement.",
-        8: "New Balance 990v5 offers premium comfort with its ENCAP midsole technology and pigskin/mesh upper construction.",
-        9: "Dr. Martens 1460 boots are built to last with their iconic air-cushioned sole and durable leather construction.",
-        10: "Balenciaga Triple S represents avant-garde luxury with its oversized silhouette and premium materials.",
-        11: "Timberland 6-Inch boots provide rugged durability and waterproof protection for outdoor adventures.",
-        12: "Gucci Ace sneakers combine luxury craftsmanship with contemporary design, featuring premium leather and signature details."
+        1: "Nike Air Max 270 offers perfect comfort and style for daily use. Maximum comfort with every step thanks to air cushion technology.",
+        2: "Adidas Ultraboost 22, advanced technology that enhances your running performance. Energy return with Boost midsole.",
+        3: "Classic Converse Chuck Taylor, timeless design and durability. Ideal choice for users of all ages.",
+        4: "Vans Old Skool, the essential of street fashion. Durable canvas and suede combination.",
+        5: "Christian Louboutin heels, special design that combines luxury and elegance.",
+        6: "Jimmy Choo stiletto, perfect choice for special occasions. Made with Italian craftsmanship.",
+        7: "Puma RS-X, the meeting of retro design and modern technology. Ideal for daily use.",
+        8: "New Balance 990v5, quality sports shoe made with premium materials.",
+        9: "Dr. Martens 1460, durable leather and classic design. Quality you can use for many years.",
+        10: "Balenciaga Triple S, avant-garde design and luxury materials. Special for fashion enthusiasts.",
+        11: "Timberland 6-Inch, durable and waterproof design for outdoor activities.",
+        12: "Gucci Ace sneaker, perfect combination of Italian luxury and sports shoe comfort."
     };
     
-    return descriptions[product.id] || "Premium quality footwear designed for comfort and style.";
+    return descriptions[product.id] || "Premium quality production, comfort and style combined.";
 }
 
 function generateSizeOptions(container) {
@@ -785,24 +803,95 @@ function setupProductModalListeners(product) {
 
 function handleContactForm(e) {
     e.preventDefault();
-    const formData = new FormData(e.target);
+    const form = e.target;
+    const formData = new FormData(form);
     
-    showNotification('Sending your message...', 'info');
+    // Validate form
+    const name = formData.get('name');
+    const email = formData.get('email');
+    const message = formData.get('message');
     
+    if (!validateContactForm(name, email, message)) {
+        return;
+    }
+    
+    // Show loading state
+    showLoadingOverlay();
+    form.classList.add('form-loading');
+    
+    // Simulate API call
     setTimeout(() => {
-        e.target.reset();
+        hideLoadingOverlay();
+        form.classList.remove('form-loading');
+        form.reset();
         showNotification('Message sent successfully!', 'success');
-    }, 1500);
+    }, 2000);
+}
+
+function validateContactForm(name, email, message) {
+    let isValid = true;
+    
+    if (!name || name.trim().length < 2) {
+        showNotification('Name must be at least 2 characters long', 'error');
+        isValid = false;
+    }
+    
+    if (!validateEmail(email)) {
+        showNotification('Please enter a valid email address', 'error');
+        isValid = false;
+    }
+    
+    if (!message || message.trim().length < 10) {
+        showNotification('Message must be at least 10 characters long', 'error');
+        isValid = false;
+    }
+    
+    return isValid;
 }
 
 function handleNewsletter(e) {
     e.preventDefault();
-    const email = e.target.querySelector('input[type="email"]').value;
+    const form = e.target;
+    const email = form.querySelector('input[type="email"]').value;
     
-    if (email) {
-        showNotification('Newsletter subscription successful!', 'success');
-        e.target.querySelector('input[type="email"]').value = '';
+    if (!validateEmail(email)) {
+        showNotification('Please enter a valid email address', 'error');
+        return;
     }
+    
+    // Show loading state
+    const submitBtn = form.querySelector('button');
+    submitBtn.classList.add('btn-loading');
+    submitBtn.disabled = true;
+    
+    // Simulate API call
+    setTimeout(() => {
+        submitBtn.classList.remove('btn-loading');
+        submitBtn.disabled = false;
+        form.reset();
+        showNotification('Successfully subscribed to newsletter!', 'success');
+    }, 2000);
+}
+
+// Loading Overlay Functions
+function showLoadingOverlay() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.classList.add('active');
+    }
+}
+
+function hideLoadingOverlay() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+    }
+}
+
+// Email Validation Function
+function validateEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
 }
 
 // Notification System
@@ -952,12 +1041,12 @@ document.addEventListener('click', (e) => {
 });
 
 function showProfile() {
-    showNotification('Profile page coming soon!', 'info');
+    window.location.href = 'profile.html';
     toggleUserMenu();
 }
 
 function showOrders() {
-    showNotification('Orders page coming soon!', 'info');
+    window.location.href = 'profile.html#orders';
     toggleUserMenu();
 }
 
@@ -1015,10 +1104,95 @@ function handleAuthSubmit(e) {
     const password = document.getElementById('password').value;
     const fullName = document.getElementById('fullName').value;
     
+    // Clear previous error messages
+    clearFormErrors();
+    
+    // Validate form
+    if (!validateAuthForm(email, password, fullName)) {
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = document.getElementById('authSubmit');
+    submitBtn.classList.add('btn-loading');
+    submitBtn.disabled = true;
+    
     if (isLoginMode) {
         handleLogin(email, password);
     } else {
         handleRegister(email, password, fullName);
+    }
+}
+
+function validateAuthForm(email, password, fullName) {
+    let isValid = true;
+    
+    // Email validation
+    if (!validateEmail(email)) {
+        showFieldError('emailError', 'Please enter a valid email address');
+        markFieldInvalid('email');
+        isValid = false;
+    } else {
+        markFieldValid('email');
+    }
+    
+    // Password validation
+    if (password.length < 6) {
+        showFieldError('passwordError', 'Password must be at least 6 characters long');
+        markFieldInvalid('password');
+        isValid = false;
+    } else {
+        markFieldValid('password');
+    }
+    
+    // Full name validation (for registration)
+    if (!isLoginMode) {
+        if (!fullName || fullName.trim().length < 2) {
+            showFieldError('nameError', 'Full name must be at least 2 characters long');
+            markFieldInvalid('fullName');
+            isValid = false;
+        } else {
+            markFieldValid('fullName');
+        }
+    }
+    
+    return isValid;
+}
+
+function showFieldError(errorId, message) {
+    const errorElement = document.getElementById(errorId);
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.classList.add('show');
+    }
+}
+
+function clearFormErrors() {
+    const errorElements = document.querySelectorAll('.error-message');
+    errorElements.forEach(element => {
+        element.classList.remove('show');
+        element.textContent = '';
+    });
+    
+    const inputs = document.querySelectorAll('.form-group input');
+    inputs.forEach(input => {
+        input.classList.remove('valid', 'invalid');
+    });
+}
+
+function markFieldValid(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (field) {
+        field.classList.remove('invalid');
+        field.classList.add('valid');
+    }
+}
+
+function markFieldInvalid(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (field) {
+        field.classList.remove('valid');
+        field.classList.add('invalid');
     }
 }
 
@@ -1047,6 +1221,11 @@ async function handleLogin(email, password) {
     } catch (error) {
         console.error('Login error:', error);
         showNotification('Network error. Please try again.', 'error');
+    } finally {
+        // Remove loading state
+        const submitBtn = document.getElementById('authSubmit');
+        submitBtn.classList.remove('btn-loading');
+        submitBtn.disabled = false;
     }
 }
 
@@ -1090,6 +1269,11 @@ async function handleRegister(email, password, fullName) {
     } catch (error) {
         console.error('Registration error:', error);
         showNotification('Network error. Please try again.', 'error');
+    } finally {
+        // Remove loading state
+        const submitBtn = document.getElementById('authSubmit');
+        submitBtn.classList.remove('btn-loading');
+        submitBtn.disabled = false;
     }
 }
 
